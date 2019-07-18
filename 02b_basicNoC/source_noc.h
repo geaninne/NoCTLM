@@ -21,8 +21,9 @@ SC_MODULE(source_noc){
 
 
 	void Stimuli(){
+
 		basicPacket<int> *aux;
-		basicPacket<string> *aux2;	
+		basicPacket<int> *aux2;	
 		int sizePacket;	
 		uint16_t dest;
 		sc_time timeEntry;
@@ -33,11 +34,11 @@ SC_MODULE(source_noc){
 		url2 << addressSource;
 		string urlFinal = url + url2.str() + ".txt";
 		cout<<urlFinal<<endl;
-	  string line;
+	  	string line;
 	  	int i=0;
 
-	istringstream is(line);
-	string part[4];
+		istringstream is(line);
+		string part[4];
 
 
 		ifstream myfile (urlFinal.c_str());
@@ -50,6 +51,7 @@ SC_MODULE(source_noc){
 			std::istringstream iss2 (part[1]);
 			iss2 >> dest;
 
+
 			std::istringstream iss3 (part[2]);
 			iss3 >> sizePacket;
 			//printf("tamanho do pacote eh %d\n",sizePacket);
@@ -61,15 +63,39 @@ SC_MODULE(source_noc){
    				 perror ("The packet size not match");		
    			}
 			
-			addressDest.address = dest;
+			char destxy[3];
+			sprintf(destxy,"%d",dest);	
+			printf("x = %c\n",destxy[0]);
+			
+			/*ERRO AQUI NA HORA DA CONVERSAO*/
+			int testX = (int)destxy[0];
+			int testY = (int)destxy[2];
 
-   			aux2=new basicPacket<string>(part[3]);
-			aux2->setDestination(addressDest.x,addressDest.y);
-			cout<<dest<<endl;
-			printf("DESTINATION X ");
-			cout <<addressDest.x<<endl;
-			printf("DESTINATION Y ");
-			cout <<addressDest.y<<endl;
+			printf("x = %d\n", testX);
+			addressDest.x = testX;
+			addressDest.y = testY;
+
+
+			int aaa [2];
+			aaa[0] = 0;
+			aaa[1] = 1; 
+
+				/*cria novo pacote passando o payload */
+   			aux2 = new basicPacket<int>(*aaa);
+
+   			aux2->setDestination(1,0);
+   			aux2->setSizePacket(3);
+			//aux2->setTimeEntry(timeEnt);
+
+   			cout<< "destino = " << aux2->getDestination().address <<endl;
+
+
+		/**/
+		//	aux2->setDestination(dest);
+
+			cout<< "destino = " << (uint16_t)aux2->getDestination().address <<endl;
+			cout << "destino x = " << dec <<  aux2->getDestination().x<<endl;
+			cout << "destino  y = " << dec << aux2->getDestination().y<<endl;
 			aux2->setID(id);
 
 
@@ -130,7 +156,7 @@ SC_MODULE(source_noc){
 			}
 			aux=new basicPacket<int>(*message);
 			do{
-				aux->setDestination(rand()%maxx, rand()%maxy);
+				//aux->setDestination(rand()%maxx, rand()%maxy);
 
 				aux->setSizePacket(sizePacket);
 				aux->setID(id);
@@ -150,12 +176,18 @@ SC_MODULE(source_noc){
 	
 	//SC_CTOR(source_noc){
 	source_noc(sc_module_name _name, uint8_t _x, uint8_t _y): sc_module(_name){
+		/*endereco x*/
 		myAddress.x=_x;
-		cout<<hex<<unsigned(myAddress.x)<<endl;
+		cout<< "x = " << hex <<unsigned(myAddress.x)<<endl;
+		
+		/*endereco y*/
 		myAddress.y=_y;
-		cout<<hex<<unsigned(myAddress.y)<<endl;
+		cout<<"y = " << hex<<unsigned(myAddress.y)<<endl;
+		
 		SC_THREAD(Stimuli);
-		cout << hex<< myAddress.address << endl;
+		
+		/*endereco id*/
+		cout << "id = " << hex<< myAddress.address << endl;
 	}
 	SC_HAS_PROCESS(source_noc);
 };

@@ -38,6 +38,7 @@ class basicPacket{
 	  basicPacket(uint16_t address, payload p);
 	  basicPacket(uint8_t x, uint8_t y, payload p);
 	  void setDestination(uint8_t x, uint8_t y);
+
 	  coordinate getDestination();
 	  coordinate getSource();
 	  uint8_t getHops();
