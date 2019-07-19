@@ -3,9 +3,10 @@
 #include <iostream>
 #include <inttypes.h>
 #include <fstream>
-#include <sstream>
+#include<sstream>
 #include <string>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "systemc.h"
 #include "basicPacket.h"
@@ -17,13 +18,12 @@ SC_MODULE(source_noc){
 
 	sc_fifo_out<basicPacket<int> > port;
 	coordinate myAddress;
-	coordinate addressDest;
-
+	coordinate addressDest;	
 
 	void Stimuli(){
 
 		basicPacket<int> *aux;
-		basicPacket<int> *aux2;	
+		basicPacket<string> *aux2;	
 		int sizePacket;	
 		uint16_t dest;
 		sc_time timeEntry;
@@ -43,84 +43,56 @@ SC_MODULE(source_noc){
 
 		ifstream myfile (urlFinal.c_str());
 		if (myfile.is_open()){
-		while (! myfile.eof() ){
-			while (getline(myfile, part[i], ' ')) i++;
-			std::istringstream iss (part[0]);
-			iss >> timeEnt;
+			while (! myfile.eof() ){
+				while (getline(myfile, part[i], ' ')) i++;
+					std::istringstream iss (part[0]);
+					iss >> timeEnt;
 	
-			std::istringstream iss2 (part[1]);
-			iss2 >> dest;
+					std::istringstream iss2 (part[1]);
+					iss2 >> dest;
 
-
-			std::istringstream iss3 (part[2]);
-			iss3 >> sizePacket;
-			//printf("tamanho do pacote eh %d\n",sizePacket);
-
-			int lengthStr=(part[3].length()-1);
+					std::istringstream iss3 (part[2]);
+					iss3 >> sizePacket;
+		
+					int lengthStr=(part[3].length()-1);
 			
-			//printf("%d\n",timeEnt);
-			if((lengthStr!=sizePacket) && (part[0].length()!=0)){
-   				 perror ("The packet size not match");		
-   			}
+					if((lengthStr!=sizePacket) && (part[0].length()!=0)){
+   						 perror ("The packet size not match");		
+   					}	
 			
-			char destxy[3];
-			sprintf(destxy,"%d",dest);	
-			printf("x = %c\n",destxy[0]);
+					char destxy[3];
+					sprintf(destxy,"%d",dest);
+		
+					int testX = (int)destxy[0] - 48;
+					int testY = (int)destxy[2] - 48;
+					addressDest.x = testX;
+					addressDest.y = testY;
 			
-			/*ERRO AQUI NA HORA DA CONVERSAO*/
-			int testX = (int)destxy[0];
-			int testY = (int)destxy[2];
+					/*cria novo pacote passando o payload */
+   					aux2 = new basicPacket<string>(part[3]);
 
-			printf("x = %d\n", testX);
-			addressDest.x = testX;
-			addressDest.y = testY;
+   					aux2->setDestination(addressDest.x,addressDest.y);
+   					aux2->setSizePacket(sizePacket);
+					//aux2->setTimeEntry(timeEnt);
+   					cout<< "destino = " << aux2->getDestination().address <<endl;
 
+					aux2->setID(id);
 
-			int aaa [2];
-			aaa[0] = 0;
-			aaa[1] = 1; 
+					/*convertendo timeEntry para sc_time*/
+					sc_time sc_timeEnt = sc_time(timeEnt,SC_NS);
+					
+					sc_time time_now =getTimeNow();// sc_time(sc_time_stamp(),SC_NS);
+					if(time_now>=sc_timeEnt){
+						perror("Entry time of the packet must be higher");
+					}else{
+						cout << sc_time_stamp() << " menor que " << sc_timeEnt <<endl;
+						while(getTimeNow()<sc_timeEnt){
+							wait(1,SC_NS);
+						}
+						cout <<"timeStamp = " << sc_time_stamp()<<endl; 
+					}
 
-				/*cria novo pacote passando o payload */
-   			aux2 = new basicPacket<int>(*aaa);
-
-   			aux2->setDestination(1,0);
-   			aux2->setSizePacket(3);
-			//aux2->setTimeEntry(timeEnt);
-
-   			cout<< "destino = " << aux2->getDestination().address <<endl;
-
-
-		/**/
-		//	aux2->setDestination(dest);
-
-			cout<< "destino = " << (uint16_t)aux2->getDestination().address <<endl;
-			cout << "destino x = " << dec <<  aux2->getDestination().x<<endl;
-			cout << "destino  y = " << dec << aux2->getDestination().y<<endl;
-			aux2->setID(id);
-
-
-			int imagDur; //< Assuming you are getting a value from somewhere.
-
-			sc_time sc_timeEnt = sc_time(timeEnt,SC_NS);
-			if(sc_time_stamp()>sc_timeEnt){
-				//cout<<sc_time_stamp()<<endl;
-				//cout<<sc_timeEnt<<endl;
-				perror("Entry time of the packet must be higher");
-			}else{
-				printf("caiu no else\n");
-				//sc_time waitTime = timeEnt - sc_time_stamp();
-				//wait(timeEnt-sc_time_stamp(),SC_NS);
-				while(sc_time_stamp()<sc_timeEnt){
-					wait(1,SC_NS);
-				//	printf("caiu no while\n");*/
-				//sc_time t1(sc_time_stamp(),SC_NS);
 				//}
-				}
-
-
-
-
-			}
 			/*				aux->setID(id);
 				timeEntry=sc_time_stamp();//.toString();
 				aux->setTimeEntry(timeEntry);
